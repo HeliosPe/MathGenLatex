@@ -1,8 +1,13 @@
 package it.girasolia.matrixgenlatex.GUI;
 
+import ch.qos.logback.core.pattern.SpacePadder;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -13,6 +18,7 @@ import it.girasolia.matrixgenlatex.data.MatrixDTO;
 import it.girasolia.matrixgenlatex.service.MatrixToLatexService;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 
 @Route("")
@@ -24,29 +30,32 @@ public class MatrixEditorView extends VerticalLayout {
     private int rowsNum = 3;
     private int colsNum = 3;
 
-    private final TextField rowsField = new TextField("Строк");
-    private final TextField colsField = new TextField("Колонок");
+    private final TextField rowsField = new TextField(getTranslation("matrix.rowsString"));
+    private final TextField colsField = new TextField(getTranslation("matrix.colsString"));
 
-    private final Button addRow = new Button("+ Строка");
-    private final Button removeRow = new Button("- Строка");
+    private final Button addRow = new Button(getTranslation("matrix.addRow"));
+    private final Button removeRow = new Button(getTranslation("matrix.subRow"));
 
-    private final Button addCol = new Button("+ Колонка");
-    private final Button removeCol = new Button("- Колонка");
+    private final Button addCol = new Button(getTranslation("matrix.addCol"));
+    private final Button removeCol = new Button(getTranslation("matrix.subCol"));
 
     private final Checkbox generalized =
-            new Checkbox("Обобщенная матрица");
+            new Checkbox(getTranslation("matrix.generic"));
 
     private final TextField elementField =
-            new TextField("Общий элемент");
+            new TextField(getTranslation("matrix.genericElement"));
 
     private final Button alpha = new Button("α");
     private final Button beta = new Button("β");
     private final Button lambda = new Button("λ");
 
     private final MatrixComponent matrix = new MatrixComponent(3,3);
-    private final Button generate = new Button("Получить результат");
-    private final TextArea resultArea = new TextArea("Результат");
-    private final Button copy = new Button("Копировать");
+    private final Button generate = new Button(getTranslation("system.getResult"));
+    private final TextArea resultArea = new TextArea(getTranslation("system.result"));
+    private final Button copy = new Button(getTranslation("system.copy"));
+
+    ComboBox<Locale> localeBox = new ComboBox<>();
+
 
     public MatrixEditorView(MatrixToLatexService service) {
         this.service = service;
@@ -57,6 +66,14 @@ public class MatrixEditorView extends VerticalLayout {
         resultArea.setWidthFull();
         resultArea.setHeight("300px");
 
+        HorizontalLayout div = new HorizontalLayout();
+        div.setWidthFull();
+        Div title = new Div();
+        title.setText("Matrix Editor");
+        Div spacer = new Div();
+
+        div.setFlexGrow(1, spacer);
+        spacer.setWidth(100, Unit.PIXELS);
         toolbar = new HorizontalLayout(
                 addRow,
                 removeRow,
@@ -65,7 +82,13 @@ public class MatrixEditorView extends VerticalLayout {
                 generalized
         );
 
-        add(toolbar, matrix, generate, resultArea, copy);
+        localeBox.setItems(
+                Locale.ENGLISH,
+                Locale.of("ru"),
+                Locale.ITALIAN
+        );
+        div.add(toolbar, spacer, localeBox, new Text("\uD83C\uDF10"));
+        add(div, matrix, generate, resultArea, copy);
 
         addRow.addClickListener(e -> {
             ++rowsNum;
@@ -142,7 +165,12 @@ public class MatrixEditorView extends VerticalLayout {
                             "navigator.clipboard.writeText($0)",
                             resultArea.getValue()
                     );
-            Notification.show("Скопировано");
+            Notification.show(getTranslation("system.copied"));
+        });
+
+        localeBox.addValueChangeListener(e -> {
+            UI.getCurrent().setLocale(e.getValue());
+            langUpdate();
         });
     }
 
@@ -188,5 +216,28 @@ public class MatrixEditorView extends VerticalLayout {
                 }
             }
         }
+    }
+
+    private String getTranslation(String key) {
+        return getTranslation(key, UI.getCurrent().getLocale());
+    }
+
+    private void langUpdate(){
+        this.rowsField.setLabel(getTranslation("matrix.rowsString"));
+        this.colsField.setLabel(getTranslation("matrix.colsString"));
+
+        this.addRow.setText(getTranslation("matrix.addRow"));
+        this.removeRow.setText(getTranslation("matrix.subRow"));
+
+        this.addCol.setText(getTranslation("matrix.addCol"));
+        this.removeCol.setText(getTranslation("matrix.subCol"));
+
+        this.generalized.setLabel(getTranslation("matrix.generic"));
+        this.elementField.setLabel(getTranslation("matrix.genericElement"));
+        this.generate.setText(getTranslation("system.getResult"));
+        this.resultArea.setLabel(getTranslation("system.result"));
+        this.copy.setText(getTranslation("system.copy"));
+
+
     }
 }
